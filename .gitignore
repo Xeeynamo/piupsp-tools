@@ -21,3 +21,6 @@
 
 # ...even if they are in subdirectories
 !*/
+
+# preview image in the readme
+!ULKS46042.png
