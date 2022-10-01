@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
+	"strconv"
 
 	"github.com/xeeynamo/piupsp-tools/piu-makestx/stx"
 )
@@ -12,21 +11,20 @@ import (
 func main() {
 	var inFileName string
 	var outFileName string
+	var difficulty string
 
 	args := os.Args[1:]
 	switch len(args) {
-	case 2:
+	case 3:
 		inFileName = args[0]
 		outFileName = args[1]
-	case 1:
-		inFileName = args[0]
-		outFileName = strings.TrimSuffix(filepath.Base(inFileName), filepath.Ext(inFileName)) + ".STX"
+		difficulty = args[2]
 	default:
 		printHelp()
 		os.Exit(1)
 	}
 
-	err := convertSccToStx(inFileName, outFileName)
+	err := convertSccToStx(inFileName, outFileName, difficulty)
 	if err != nil {
 		panic(err)
 	}
@@ -36,13 +34,37 @@ func main() {
 
 func printHelp() {
 	fmt.Fprint(os.Stderr, "usage:\n")
-	fmt.Fprint(os.Stderr, "   piu-makestx step.scc [step.STX]\n")
+	fmt.Fprint(os.Stderr, "   piu-makestx step.scc step.STX S10\n")
 }
 
-func convertSccToStx(inFileName string, outFileName string) error {
+func convertSccToStx(inFileName string, outFileName string, difficulty string) error {
+	switch {
+	case len(difficulty) > 0 && difficulty[0] == 'S':
+	case len(difficulty) > 0 && difficulty[0] == 'D':
+	default:
+		return fmt.Errorf("unsure if it is a single or double chart: %s", difficulty)
+	}
+
+	level, err := strconv.Atoi(difficulty[1:])
+	if err != nil {
+		return fmt.Errorf("difficulty format invalid: %s", difficulty)
+	}
+
 	step, err := parseAsStx(inFileName)
 	if err != nil {
 		return err
+	}
+
+	var mainChart *stx.Chart = nil
+	for _, b := range step.Charts {
+		if b.Difficulty == uint32(level) {
+			mainChart = &b
+			break
+		}
+	}
+
+	if mainChart == nil {
+		return fmt.Errorf("no %s chart found in the specified SCC", difficulty)
 	}
 
 	f, err := os.Create(outFileName)
@@ -51,41 +73,21 @@ func convertSccToStx(inFileName string, outFileName string) error {
 	}
 	defer f.Close()
 
-	chart := stx.Chart{
-		Difficulty: 0,
-		Blocks: []stx.Block{
-			{
-				Bpm:            step.Charts[0].Blocks[0].Bpm,
-				BeatPerMeasure: step.Charts[0].Blocks[0].BeatPerMeasure,
-				BeatSplit:      step.Charts[0].Blocks[0].BeatSplit,
-				Speed:          step.Charts[0].Blocks[0].Speed,
-				Notes:          make([]byte, 64*stx.NotesPerRow),
-			},
-		},
-	}
-
-	mainChart := &step.Charts[8]
-	// mainBlock := &mainChart.Blocks[0]
-	// delay := make([]byte, stx.NotesPerRow*mainBlock.BeatPerMeasure*mainBlock.BeatSplit*4)
-	// mainBlock.Notes = append(mainBlock.Notes, delay...)
-	// mainBlock.Notes = append(mainBlock.Notes, delay...)
-	// mainBlock.Notes = append(mainBlock.Notes, delay...)
-	// mainBlock.Notes = append(mainBlock.Notes, delay...)
-
 	return stx.WriteStx(f, &stx.Step{
 		Title:  step.Title,
 		Artist: step.Artist,
 		Author: step.Author,
 		Charts: []stx.Chart{
-			chart,
+			// wow, this is UGLY.
 			*mainChart,
-			chart,
-			chart,
-			chart,
-			chart,
-			chart,
-			chart,
-			chart,
+			*mainChart,
+			*mainChart,
+			*mainChart,
+			*mainChart,
+			*mainChart,
+			*mainChart,
+			*mainChart,
+			*mainChart,
 		},
 	})
 }
