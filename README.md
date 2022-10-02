@@ -13,7 +13,6 @@ The entire process is experimental. While there is a proof of success, the conve
 Also the following bugs are found when converting a SSC chart into STX:
 
 * The chart will have a slightly off speed
-* Press are currently buggy
 * Tempo change are not yet supported
 * I have no idea what the G/W/A/B/C are
 * There is no way to port all the difficulties

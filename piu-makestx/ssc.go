@@ -110,7 +110,7 @@ func parseChart(scanner *bufio.Scanner, desc desc) (stx.Chart, error) {
 func readNotes(scanner *bufio.Scanner) []byte {
 	notes := make([]byte, 0)
 	row := make([]byte, stx.NotesPerRow)
-	press := make([]bool, stx.NotesPerRow)
+	hold := make([]bool, stx.NotesPerRow)
 	for scanner.Scan() {
 		line := scanner.Text()
 		switch {
@@ -120,25 +120,22 @@ func readNotes(scanner *bufio.Scanner) []byte {
 			return notes
 		}
 
-		for i := 0; i < stx.NotesPerRow; i++ {
-			row[i] = 0
-			if press[i] {
-				row[i] = stx.NotePress
-			}
-		}
-
 		for i := 0; i < len(line) && i < stx.NotesPerRow; i++ {
 			switch line[i] {
 			case '0':
-				row[i] = stx.NoteEmpty
+				if hold[i] {
+					row[i] = stx.NoteHold
+				} else {
+					row[i] = stx.NoteEmpty
+				}
 			case '1':
 				row[i] = stx.NoteTap
 			case '2':
-				row[i] = stx.NotePressStart
-				press[i] = true
+				row[i] = stx.NoteHoldStart
+				hold[i] = true
 			case '3':
-				row[i] = stx.NotePressEnd
-				press[i] = false
+				row[i] = stx.NoteHoldEnd
+				hold[i] = false
 			}
 		}
 

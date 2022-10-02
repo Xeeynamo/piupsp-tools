@@ -47,9 +47,9 @@ const (
 	NoteUnk7
 	NoteUnk8
 	NoteUnk9
-	NotePressStart
-	NotePress
-	NotePressEnd
+	NoteHoldStart
+	NoteHold
+	NoteHoldEnd
 )
 
 const nChartMax = 9
