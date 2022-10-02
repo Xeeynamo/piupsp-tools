@@ -32,8 +32,8 @@ var (
 
 func main() {
 	var inPath string
+	var outPath string
 	var mode string
-	outPath := "."
 
 	args := os.Args[1:]
 	switch len(args) {
@@ -50,6 +50,10 @@ func main() {
 
 	switch mode {
 	case "x":
+		if len(outPath) == 0 {
+			name := strings.TrimSuffix(filepath.Base(inPath), filepath.Ext(inPath))
+			outPath = path.Join(outPath, name)
+		}
 		if err := unpack(inPath, outPath); err != nil {
 			panic(err)
 		}
@@ -156,7 +160,7 @@ func pack(inPath string, outFileName string) error {
 	return nil
 }
 
-func unpack(inFileName string, outPath string) error {
+func unpack(inFileName string, dstPath string) error {
 	data, err := os.ReadFile(inFileName)
 	if err != nil {
 		return err
@@ -167,8 +171,6 @@ func unpack(inFileName string, outPath string) error {
 		return ErrInvalidRespack
 	}
 
-	name := strings.TrimSuffix(filepath.Base(inFileName), filepath.Ext(inFileName))
-	dstPath := path.Join(outPath, name)
 	if _, err := os.Stat(dstPath); !os.IsExist(err) {
 		os.MkdirAll(dstPath, 0755)
 	}
